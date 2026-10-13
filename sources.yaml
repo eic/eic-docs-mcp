@@ -1,0 +1,113 @@
+# Git repositories indexed by eic-docs-mcp. Each entry: a short name (used as
+# the first path component of every document), the clone URL, the branch and
+# the glob patterns of Markdown files to index, relative to the checkout.
+
+- name: eic.github.io
+  url: https://github.com/eic/eic.github.io
+  branch: master
+  files:
+    - _documentation/*.md
+    - _resources/*.md
+    - _software/*.md
+    - _about/*.md
+
+- name: knowledge-guide
+  url: https://github.com/eic/knowledge-guide
+  branch: main
+  pages: https://eic.github.io/knowledge-guide
+  files:
+    - index.md
+    - docs/**/*.md
+
+- name: tutorial-mcp
+  url: https://github.com/eic/tutorial-mcp
+  branch: main
+  files:
+    - episodes/*.md
+    - learners/*.md
+
+- name: tutorial-setting-up-environment
+  url: https://github.com/eic/tutorial-setting-up-environment
+  branch: main
+  files:
+    - episodes/*.md
+    - learners/*.md
+    - index.md
+
+- name: tutorial-analysis
+  url: https://github.com/eic/tutorial-analysis
+  branch: main
+  files:
+    - episodes/*.md
+    - learners/*.md
+    - index.md
+
+- name: tutorial-file-access
+  url: https://github.com/eic/tutorial-file-access
+  branch: main
+  files:
+    - episodes/*.md
+    - learners/*.md
+    - index.md
+
+# Older Carpentries layout: episodes live in _episodes/ on the gh-pages branch.
+- name: tutorial-physics-analysis
+  url: https://github.com/eic/tutorial-physics-analysis
+  branch: gh-pages
+  files:
+    - _episodes/*.md
+    - index.md
+    - setup.md
+    - reference.md
+
+- name: tutorial-simulations-using-npsim-and-geant4
+  url: https://github.com/eic/tutorial-simulations-using-npsim-and-geant4
+  branch: main
+  files:
+    - episodes/*.md
+    - learners/*.md
+    - index.md
+
+- name: tutorial-reconstruction-algorithms
+  url: https://github.com/eic/tutorial-reconstruction-algorithms
+  branch: main
+  files:
+    - episodes/*.md
+    - learners/*.md
+    - index.md
+
+- name: skills
+  url: https://github.com/eic/skills
+  branch: main
+  files:
+    - docs/**/*.md
+
+- name: eic-mcp
+  url: https://github.com/eic/eic-mcp
+  branch: main
+  files:
+    - README.md
+
+- name: uproot-mcp-server
+  url: https://github.com/eic/uproot-mcp-server
+  branch: main
+  files:
+    - README.md
+
+- name: xrootd-mcp-server
+  url: https://github.com/eic/xrootd-mcp-server
+  branch: main
+  files:
+    - README.md
+
+- name: rucio-eic-mcp-server
+  url: https://github.com/eic/rucio-eic-mcp-server
+  branch: main
+  files:
+    - README.md
+
+- name: zenodo-mcp-server
+  url: https://github.com/eic/zenodo-mcp-server
+  branch: main
+  files:
+    - README.md

@@ -1,0 +1,19 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --frozen
+      - name: pytest (no skipped tests allowed)
+        shell: bash
+        run: |
+          uv run pytest -q -rs | tee pytest.log
+          test "${PIPESTATUS[0]}" -eq 0
+          ! grep -E '[0-9]+ skipped' pytest.log
