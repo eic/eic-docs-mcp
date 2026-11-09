@@ -9,7 +9,6 @@ import threading
 import time
 from pathlib import Path
 
-from eic_docs_mcp import remote
 from eic_docs_mcp.database import Database
 from eic_docs_mcp.indexer import build_index
 from eic_docs_mcp.sources import index_path, load_sources, repos_directory, update_source
@@ -38,7 +37,7 @@ def main() -> None:
 
     from eic_docs_mcp.server import serve
 
-    if not index_path().is_file() and not remote.api_url():
+    if not index_path().is_file():
         threading.Thread(target=first_index, daemon=True).start()
     if arguments.refresh_hours > 0:
         threading.Thread(target=refresh_forever, args=(arguments.refresh_hours,), daemon=True).start()
