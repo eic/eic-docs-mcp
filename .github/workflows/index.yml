@@ -7,6 +7,8 @@ on:
   push:
     branches: [main]
     paths: [sources.yaml, src/**]
+  pull_request:
+    paths: [sources.yaml, src/**, .github/workflows/index.yml]
 
 permissions:
   contents: write
@@ -25,7 +27,16 @@ jobs:
           uv run eic-docs-mcp --update
           uv run eic-docs-mcp --index
           cd "$EIC_DOCS_SITE" && sha256sum index.db > index.db.sha256
+      - name: a fresh server downloads and searches it
+        env:
+          EIC_DOCS_SITE: ${{ runner.temp }}/fresh
+          EIC_DOCS_INDEX_URL: file://${{ runner.temp }}/site/index.db
+        run: |
+          uv run python -c "from eic_docs_mcp import cli; cli.first_index()"
+          test ! -e "$EIC_DOCS_SITE/repos"
+          uv run python -c "from eic_docs_mcp.server import doc_search; r = doc_search('rucio'); print(r[:300]); assert r.startswith('1. ')"
       - name: upload to the index release
+        if: github.event_name != 'pull_request'
         env:
           GH_TOKEN: ${{ github.token }}
           SITE: ${{ runner.temp }}/site
