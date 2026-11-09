@@ -102,7 +102,7 @@ def download_index(path: Path) -> bool:
     try:
         data = fetch(url)
         expected = fetch(url + ".sha256").split()[0].decode()
-    except OSError as error:
+    except (OSError, IndexError, UnicodeDecodeError) as error:
         logging.getLogger(__name__).warning("no prebuilt index: %s", error)
         return False
     if hashlib.sha256(data).hexdigest() != expected:
