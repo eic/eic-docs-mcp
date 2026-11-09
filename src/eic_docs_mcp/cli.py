@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import logging
+import os
 import sys
 import threading
 import time
 from pathlib import Path
+from urllib.request import Request, urlopen
 
 from eic_docs_mcp.database import Database
 from eic_docs_mcp.indexer import build_index
@@ -58,6 +61,7 @@ def index(path: Path | None = None) -> None:
 
 
 REFRESH_LOCK = threading.Lock()
+INDEX_URL = "https://github.com/eic/eic-docs-mcp/releases/download/index/index.db"
 
 
 def refresh() -> None:
@@ -77,11 +81,36 @@ def first_index() -> None:
     try:
         with REFRESH_LOCK:
             partial.unlink(missing_ok=True)
-            update()
-            index(partial)
+            if not download_index(partial):
+                update()
+                index(partial)
             partial.replace(target)
     except Exception as error:  # no network or git: keep serving
         logging.getLogger(__name__).warning("first index failed: %s", error)
+
+
+def fetch(url: str) -> bytes:
+    with urlopen(Request(url, headers={"User-Agent": "eic-docs-mcp"}), timeout=60) as response:
+        return response.read()
+
+
+def download_index(path: Path) -> bool:
+    """Download the prebuilt index. False if it is unreachable or fails the sha256 check."""
+    url = os.getenv("EIC_DOCS_INDEX_URL", INDEX_URL)
+    if not url:
+        return False
+    try:
+        data = fetch(url)
+        expected = fetch(url + ".sha256").split()[0].decode()
+    except (OSError, IndexError, UnicodeDecodeError) as error:
+        logging.getLogger(__name__).warning("no prebuilt index: %s", error)
+        return False
+    if hashlib.sha256(data).hexdigest() != expected:
+        logging.getLogger(__name__).warning("prebuilt index failed its checksum")
+        return False
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(data)
+    return True
 
 
 def refresh_forever(hours: float, sleep=time.sleep) -> None:
