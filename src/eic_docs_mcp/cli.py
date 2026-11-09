@@ -58,25 +58,35 @@ def index(path: Path | None = None) -> None:
     database.close()
 
 
+REFRESH_LOCK = threading.Lock()
+
+
+def refresh() -> None:
+    """Pull and re-index; a failure is logged and tried again next time."""
+    try:
+        with REFRESH_LOCK:
+            update()
+            index()
+    except Exception as error:  # a network or git failure must not stop the server
+        logging.getLogger(__name__).warning("refresh failed: %s", error)
+
+
 def first_index() -> None:
     """Build into index.db.part and rename, so searches never see a partial index."""
     target = index_path()
     partial = target.with_name(target.name + ".part")
-    partial.unlink(missing_ok=True)
     try:
-        update()
-        index(partial)
-        partial.replace(target)
+        with REFRESH_LOCK:
+            partial.unlink(missing_ok=True)
+            update()
+            index(partial)
+            partial.replace(target)
     except Exception as error:  # no network or git: keep serving
         logging.getLogger(__name__).warning("first index failed: %s", error)
 
 
 def refresh_forever(hours: float, sleep=time.sleep) -> None:
-    """Pull and re-index every `hours`; a failure is logged and tried again next time."""
+    """Pull and re-index every `hours`."""
     while True:
         sleep(hours * 3600)
-        try:
-            update()
-            index()
-        except Exception as error:  # a network or git failure must not stop the server
-            logging.getLogger(__name__).warning("refresh failed: %s", error)
+        refresh()

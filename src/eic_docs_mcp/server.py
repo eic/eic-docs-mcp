@@ -156,7 +156,7 @@ async def refresh(request: Request) -> PlainTextResponse:
         return PlainTextResponse("unauthorized", status_code=401)
     from eic_docs_mcp import cli
 
-    threading.Thread(target=lambda: (cli.update(), cli.index()), daemon=True).start()
+    threading.Thread(target=cli.refresh, daemon=True).start()
     return PlainTextResponse("refresh started", status_code=202)
 
 

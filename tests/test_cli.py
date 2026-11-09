@@ -21,3 +21,17 @@ def test_first_index_failure(tmp_path, monkeypatch):
     monkeypatch.setattr(cli, "update", offline)
     cli.first_index()
     assert not (tmp_path / "index.db").exists()
+
+
+def test_refresh_waits_for_first_index(monkeypatch):
+    import threading
+    calls = []
+    monkeypatch.setattr(cli, "update", lambda: calls.append("update"))
+    monkeypatch.setattr(cli, "index", lambda *_: calls.append("index"))
+    with cli.REFRESH_LOCK:
+        worker = threading.Thread(target=cli.refresh)
+        worker.start()
+        worker.join(0.2)
+        assert calls == []
+    worker.join(2)
+    assert calls == ["update", "index"]
