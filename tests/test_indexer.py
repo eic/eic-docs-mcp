@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from conftest import SOURCES, index_all
-from eic_docs_mcp.indexer import chunk, clean, index_source, split_front_matter, title_of
+from eic_docs_mcp.indexer import chunk, clean, index_source, podio_markdown, split_front_matter, title_of
 from eic_docs_mcp.sources import document_url
 
 
@@ -73,3 +73,29 @@ def test_document_url_with_a_pages_base():
     from eic_docs_mcp.sources import Source, document_url
     source = Source(name="guide", url="https://github.com/x/y", branch="main", files=[], pages="https://aprozo.com/eic")
     assert document_url(source, "docs/eicrecon/algorithms/hexplit.md") == "https://aprozo.com/eic/docs/eicrecon/algorithms/hexplit.html"
+
+
+def test_podio_markdown():
+    model = """
+components:
+  edm4hep::Vector3f:
+    Members:
+      - float x
+datatypes:
+  edm4eic::ReconstructedParticle:
+    Description: "Reconstructed particle"
+    Members:
+      - float             energy            // [GeV] energy
+    OneToManyRelations:
+      - edm4eic::Track tracks // tracks used
+links:
+  edm4eic::MCRecoParticleLink:
+    Description: "Reco to MC"
+    From: edm4eic::ReconstructedParticle
+    To: edm4hep::MCParticle
+"""
+    body = podio_markdown(model, "EDM4eic data model")
+    assert body.startswith("# EDM4eic data model\n")
+    assert "## edm4eic::ReconstructedParticle\nReconstructed particle\nMembers:\n- float energy // [GeV] energy" in body
+    assert "OneToManyRelations:\n- edm4eic::Track tracks // tracks used" in body
+    assert "## edm4eic::MCRecoParticleLink" in body and "To:\n- edm4hep::MCParticle" in body
