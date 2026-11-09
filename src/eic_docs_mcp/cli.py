@@ -7,6 +7,7 @@ import logging
 import sys
 import threading
 import time
+from pathlib import Path
 
 from eic_docs_mcp.database import Database
 from eic_docs_mcp.indexer import build_index
@@ -36,6 +37,8 @@ def main() -> None:
 
     from eic_docs_mcp.server import serve
 
+    if not index_path().is_file():
+        threading.Thread(target=first_index, daemon=True).start()
     if arguments.refresh_hours > 0:
         threading.Thread(target=refresh_forever, args=(arguments.refresh_hours,), daemon=True).start()
     serve(arguments.transport, arguments.host, arguments.port)
@@ -46,19 +49,43 @@ def update() -> None:
         update_source(source, repos_directory())
 
 
-def index() -> None:
-    index_path().parent.mkdir(parents=True, exist_ok=True)
-    database = Database(str(index_path()))
+def index(path: Path | None = None) -> None:
+    path = path or index_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    database = Database(str(path))
     build_index(database, load_sources(), repos_directory())
     database.close()
 
 
-def refresh_forever(hours: float, sleep=time.sleep) -> None:
-    """Pull and re-index every `hours`; a failure is logged and tried again next time."""
-    while True:
-        sleep(hours * 3600)
-        try:
+REFRESH_LOCK = threading.Lock()
+
+
+def refresh() -> None:
+    """Pull and re-index; a failure is logged and tried again next time."""
+    try:
+        with REFRESH_LOCK:
             update()
             index()
-        except Exception as error:  # a network or git failure must not stop the server
-            logging.getLogger(__name__).warning("refresh failed: %s", error)
+    except Exception as error:  # a network or git failure must not stop the server
+        logging.getLogger(__name__).warning("refresh failed: %s", error)
+
+
+def first_index() -> None:
+    """Build into index.db.part and rename, so searches never see a partial index."""
+    target = index_path()
+    partial = target.with_name(target.name + ".part")
+    try:
+        with REFRESH_LOCK:
+            partial.unlink(missing_ok=True)
+            update()
+            index(partial)
+            partial.replace(target)
+    except Exception as error:  # no network or git: keep serving
+        logging.getLogger(__name__).warning("first index failed: %s", error)
+
+
+def refresh_forever(hours: float, sleep=time.sleep) -> None:
+    """Pull and re-index every `hours`."""
+    while True:
+        sleep(hours * 3600)
+        refresh()

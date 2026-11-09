@@ -34,7 +34,7 @@ and stop words are dropped. A query containing FTS5 operators ("exact phrase",
 AND, OR, NOT, NEAR, *) is passed through verbatim.
 """
 
-NO_INDEX = "No documentation index. Build it with: eic-docs-mcp --update && eic-docs-mcp --index"
+NO_INDEX = "No documentation index yet. The server builds one on first start (a minute or two), or run: eic-docs-mcp --update && eic-docs-mcp --index"
 NO_REMOTE = "No search service configured. Set EIC_DOCS_API to its base URL, for example https://api.aprozo.com"
 FTS5_OPERATORS = re.compile(r'["*]|\b(AND|OR|NOT|NEAR)\b')
 STOP_WORDS = set(
@@ -156,7 +156,7 @@ async def refresh(request: Request) -> PlainTextResponse:
         return PlainTextResponse("unauthorized", status_code=401)
     from eic_docs_mcp import cli
 
-    threading.Thread(target=lambda: (cli.update(), cli.index()), daemon=True).start()
+    threading.Thread(target=cli.refresh, daemon=True).start()
     return PlainTextResponse("refresh started", status_code=202)
 
 
