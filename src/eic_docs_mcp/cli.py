@@ -7,7 +7,9 @@ import logging
 import sys
 import threading
 import time
+from pathlib import Path
 
+from eic_docs_mcp import remote
 from eic_docs_mcp.database import Database
 from eic_docs_mcp.indexer import build_index
 from eic_docs_mcp.sources import index_path, load_sources, repos_directory, update_source
@@ -36,6 +38,8 @@ def main() -> None:
 
     from eic_docs_mcp.server import serve
 
+    if not index_path().is_file() and not remote.api_url():
+        threading.Thread(target=first_index, daemon=True).start()
     if arguments.refresh_hours > 0:
         threading.Thread(target=refresh_forever, args=(arguments.refresh_hours,), daemon=True).start()
     serve(arguments.transport, arguments.host, arguments.port)
@@ -46,11 +50,25 @@ def update() -> None:
         update_source(source, repos_directory())
 
 
-def index() -> None:
-    index_path().parent.mkdir(parents=True, exist_ok=True)
-    database = Database(str(index_path()))
+def index(path: Path | None = None) -> None:
+    path = path or index_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    database = Database(str(path))
     build_index(database, load_sources(), repos_directory())
     database.close()
+
+
+def first_index() -> None:
+    """Build into index.db.part and rename, so searches never see a partial index."""
+    target = index_path()
+    partial = target.with_name(target.name + ".part")
+    partial.unlink(missing_ok=True)
+    try:
+        update()
+        index(partial)
+        partial.replace(target)
+    except Exception as error:  # no network or git: keep serving
+        logging.getLogger(__name__).warning("first index failed: %s", error)
 
 
 def refresh_forever(hours: float, sleep=time.sleep) -> None:

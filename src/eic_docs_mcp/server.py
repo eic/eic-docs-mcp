@@ -34,7 +34,7 @@ and stop words are dropped. A query containing FTS5 operators ("exact phrase",
 AND, OR, NOT, NEAR, *) is passed through verbatim.
 """
 
-NO_INDEX = "No documentation index. Build it with: eic-docs-mcp --update && eic-docs-mcp --index"
+NO_INDEX = "No documentation index yet. The server builds one on first start (a minute or two), or run: eic-docs-mcp --update && eic-docs-mcp --index"
 NO_REMOTE = "No search service configured. Set EIC_DOCS_API to its base URL, for example https://api.aprozo.com"
 FTS5_OPERATORS = re.compile(r'["*]|\b(AND|OR|NOT|NEAR)\b')
 STOP_WORDS = set(
