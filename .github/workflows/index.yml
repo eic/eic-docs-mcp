@@ -1,0 +1,35 @@
+name: index
+
+on:
+  schedule:
+    - cron: "17 4 * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [sources.yaml, src/**]
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --frozen
+      - name: build
+        env:
+          EIC_DOCS_SITE: ${{ runner.temp }}/site
+        run: |
+          uv run eic-docs-mcp --update
+          uv run eic-docs-mcp --index
+          cd "$EIC_DOCS_SITE" && sha256sum index.db > index.db.sha256
+      - name: upload to the index release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SITE: ${{ runner.temp }}/site
+        run: |
+          gh release view index >/dev/null 2>&1 \
+            || gh release create index --title "Prebuilt index" --notes "Search index, rebuilt daily from sources.yaml." --latest=false
+          gh release upload index "$SITE/index.db" "$SITE/index.db.sha256" --clobber

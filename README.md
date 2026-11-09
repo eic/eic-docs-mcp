@@ -97,7 +97,12 @@ channel.
 
 ## When the index is updated
 
-Only when asked: `--update` pulls the sources and `--index` rebuilds what changed.
+Without a local index, the server downloads the prebuilt one from the `index`
+release (rebuilt daily, sha256 checked) and builds from git only if that fails.
+Set `EIC_DOCS_INDEX_URL` to use another URL, or leave it empty to skip the
+download.
+
+Otherwise only when asked: `--update` pulls the sources and `--index` rebuilds what changed.
 A long-running server refreshes itself with `--refresh-hours N`; the Docker image
 does this every 24 hours (`EIC_DOCS_REFRESH_HOURS`) and also on every start. With
 `EIC_DOCS_REFRESH_TOKEN` set, `POST /refresh` with `Authorization: Bearer <token>` starts
