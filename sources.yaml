@@ -76,6 +76,17 @@
     - learners/*.md
     - index.md
 
+- name: EDM4eic
+  url: https://github.com/eic/EDM4eic
+  branch: main
+  files:
+    - edm4eic.yaml
+
+- name: EDM4hep
+  url: https://github.com/key4hep/EDM4hep
+  branch: main
+  files:
+    - edm4hep.yaml
 - name: EICrecon
   url: https://github.com/eic/EICrecon
   branch: main

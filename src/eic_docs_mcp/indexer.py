@@ -43,6 +43,24 @@ def clean(body: str) -> str:
     return re.sub(r"\n{3,}", "\n\n", body).strip() + "\n"
 
 
+def podio_markdown(text: str, title: str) -> str:
+    """A podio data model (YAML) as Markdown: one section per type."""
+    model = yaml.safe_load(text) or {}
+    lines = [f"# {title}", ""]
+    for kind in ("components", "datatypes", "links"):
+        for name, spec in (model.get(kind) or {}).items():
+            lines.append(f"## {name}")
+            if spec.get("Description"):
+                lines.append(str(spec["Description"]))
+            for key in ("Members", "VectorMembers", "OneToOneRelations", "OneToManyRelations", "From", "To"):
+                values = spec.get(key)
+                if values:
+                    lines.append(f"{key}:")
+                    lines += ["- " + " ".join(str(v).split()) for v in (values if isinstance(values, list) else [values])]
+            lines.append("")
+    return "\n".join(lines)
+
+
 def title_of(metadata: dict, body: str, relative_path: str) -> str:
     if metadata.get("title"):
         return str(metadata["title"])
@@ -78,7 +96,11 @@ def index_source(database: Database, source: Source, repos: Path) -> dict[str, i
         if database.file_hash(path) == file_hash:
             counts["skipped"] += 1
             continue
-        metadata, body = split_front_matter(raw.decode("utf-8", errors="replace"))
+        text = raw.decode("utf-8", errors="replace")
+        if file.suffix == ".yaml":
+            metadata, body = {}, podio_markdown(text, f"{source.name} data model")
+        else:
+            metadata, body = split_front_matter(text)
         body = clean(body)
         database.upsert_document(
             path, source.name, title_of(metadata, body, relative_path), document_url(source, relative_path),
